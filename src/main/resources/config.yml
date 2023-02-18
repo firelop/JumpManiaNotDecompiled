@@ -1,0 +1,16 @@
+test:
+  lobby:
+    x:
+    y:
+    z:
+    yaw:
+    pitch:
+    world:
+
+  spawns:
+   -  x:
+      y:
+      z:
+      yaw:
+      pitch:
+      world:

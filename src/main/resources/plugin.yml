@@ -1,0 +1,25 @@
+name: JumpMania
+version: '${project.version}'
+main: fr.firelop.jumpmania.JumpMania
+authors: [Firelop, casse_briques_]
+description: JumpMania is a jumping and pvp game with bonuses and maluses.
+api-version: 1.17
+softdepend: [HolographicDisplays]
+depend: [PlaceholderAPI]
+commands:
+  jumpmania:
+    description: Join a JumpMania game.
+    usage: "/jumpmania <map>"
+    aliases: [jm]
+    permission: jumpmania.use
+  quitter:
+    description: quitter
+    usage: /quitter
+    aliases: [qt]
+    permission: jumpmania.use
+  spectate:
+    description: Spectacte a player in a custom server.
+    usage: /spectate <player>
+    aliases: [spc]
+    permission: server.spectacte
+
