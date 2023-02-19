@@ -148,7 +148,7 @@ public class Game {
         }
         player.teleport(getRandomSpawn());
         player.setFireTicks(0);
-
+        player.setGameMode(GameMode.ADVENTURE);
         player.setFoodLevel(20);
         player.setSaturation(200);
         player.getInventory().clear();
@@ -160,8 +160,6 @@ public class Game {
         player.getInventory().addItem(new ItemStack(Material.ARROW, 5));
         player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 999999, 255, false, false, false));
         player.setInvulnerable(true);
-        // Block natural regen
-        player.setNoDamageTicks(999999);
 
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -199,7 +197,6 @@ public class Game {
                 plyer.setExp(0);
                 plyer.setLevel(0);
                 Utils.clearEffects(plyer);
-                player.setNoDamageTicks(0);
 
             }
             plugin.lobbys.get(lobbyName).isInGame = false;
@@ -288,7 +285,6 @@ public class Game {
         player.setHealth(20);
         player.setFoodLevel(20);
         player.setExp(0);
-        player.setNoDamageTicks(0);
 
         player.setLevel(0);
         Utils.clearEffects(player);
