@@ -53,6 +53,10 @@ public class JumpManiaJoinCommand implements CommandExecutor {
                                 player.sendMessage(ChatColor.RED + "Vous devez être le leader de votre party pour rejoindre ce lobby.");
                             }
                         } else {
+                            if(lobby.getPlayersInLobby().size() + 1 > lobby.maxPlayers) {
+                                player.sendMessage(ChatColor.RED + "Ce lobby est complet.");
+                                return true;
+                            }
                             lobby.addPlayer(player);
                         }
                     }
@@ -118,6 +122,10 @@ public class JumpManiaJoinCommand implements CommandExecutor {
                             player.sendMessage(ChatColor.RED + "Vous devez être le leader de votre party pour rejoindre ce lobby.");
                         }
                     } else {
+                        if(lobby.getPlayersInLobby().size() + 1 > lobby.maxPlayers) {
+                            player.sendMessage(ChatColor.RED + "Ce lobby est complet.");
+                            return true;
+                        }
                         lobby.addPlayer(player);
                     }
 

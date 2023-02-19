@@ -26,7 +26,7 @@ public class Movement implements Listener {
             for (Game game : plugin.games) {
                 if (game.playersInGame.contains(player)) {
                     if(!game.won) {
-                        game.respawn(player);
+                        game.respawn(player, true);
                     }
                 }
             }

@@ -3,7 +3,6 @@ package fr.firelop.jumpmania.events;
 import fr.firelop.jumpmania.JumpMania;
 import fr.firelop.jumpmania.game.Game;
 import fr.firelop.jumpmania.game.Lobby;
-import jdk.internal.ValueBased;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;

@@ -6,6 +6,8 @@ import de.simonsator.partyandfriends.api.party.PartyManager;
 import de.simonsator.partyandfriends.api.party.PlayerParty;
 import fr.firelop.jumpmania.JumpMania;
 import fr.firelop.jumpmania.statics.Utils;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -35,6 +37,7 @@ public class Game {
     public List<LootChest> lootChests = new ArrayList<>();
     public RoundManager rounds = new RoundManager();
     public int serverIndex;
+    public int ticks;
     public HashMap<Player, ItemStack[]> inventories = new HashMap<>();
 
 
@@ -56,25 +59,33 @@ public class Game {
             player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
             player.sendMessage(ChatColor.WHITE + "[JumpMania] " + ChatColor.GREEN +  "Début de la manche 1/2");
             player.setInvulnerable(false);
+            player.setHealth(20);
             respawn(player);
         }
 
         updateScoreboard();
+        updateTicks();
 
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             if(this.playerOnEmerald != null && this.playerOnEmerald.getLocation().getBlock().getRelative(BlockFace.DOWN).getType() == Material.EMERALD_BLOCK) {
                 this.timeForEmerald++;
 
-                if(timeForEmerald >= 100) {
+
+                if(timeForEmerald >= ticks) {
                     win(this.playerOnEmerald);
                 } else {
                     if(timeForEmerald % 20 == 0 && !won) {
                         for(Player player : playersInGame) {
-                            player.sendMessage(ChatColor.WHITE + "[JumpMania] " + ChatColor.DARK_PURPLE + "Victoire de " + this.playerOnEmerald.getDisplayName() + " dans " + ((100 - timeForEmerald) / 20) + "s.");
+                            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.GREEN + "Le joueur " + ChatColor.WHITE + this.playerOnEmerald.getName() + ChatColor.GREEN + " est sur l'émeraude ! (Restant: " + ChatColor.WHITE + (ticks - timeForEmerald) / 20 + ChatColor.GREEN + " secondes)"));
                         }
                     }
                 }
             } else {
+                if(this.playerOnEmerald != null) {
+                    for(Player player : playersInGame) {
+                        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(""));
+                    }
+                }
                 this.playerOnEmerald = null;
                 this.timeForEmerald = 0;
                 for (Player player : playersInGame) {
@@ -82,6 +93,7 @@ public class Game {
                     if (blockUnder.getType() == Material.EMERALD_BLOCK) {
                         this.playerOnEmerald = player;
                         this.timeForEmerald = 1;
+                        updateTicks();
                     }
                 }
             }
@@ -90,6 +102,9 @@ public class Game {
                 if (blockUnder.getType() == Material.EMERALD_BLOCK) {
                     if(player.isInvulnerable()) player.setInvulnerable(false);
                 }
+                if(player.isInvulnerable()) {
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 2, 1, false, false, false));
+                }
             }
             for(LootChest lootChest : lootChests) {
                 lootChest.updateHologram();
@@ -97,14 +112,43 @@ public class Game {
         }, 0, 1);
     }
 
+    private void updateTicks() {
+        switch(this.playersInGame.size()) {
+            case 2:
+                ticks = 100;
+                break;
+            case 3:
+                ticks = 80;
+                break;
+            default:
+                ticks = 60;
+                break;
+        }
+    }
+
     public Location getRandomSpawn() {
         return gameSpawn[(int) (Math.random() * gameSpawn.length)];
     }
 
     public void respawn(Player player) {
+        respawn(player, false);
+    }
+    public void respawn(Player player, boolean lostLife) {
+        if(lostLife) {
+            double health = player.getHealth();
+            if(health > 1) {
+                player.setHealth(health - 1);
+            }  else  {
+                player.setGameMode(GameMode.SPECTATOR);
+                player.setHealth(20);
+                player.sendTitle(ChatColor.RED + "Vous êtes mort !", ChatColor.GRAY + "Vous réaparraîtrez dans 10 secondes.", 10, 70, 20);
+                Bukkit.getScheduler().runTaskLater(Bukkit.getPluginManager().getPlugin("JumpMania"), () -> respawn(player), 200);
+                return;
+            }
+        }
         player.teleport(getRandomSpawn());
         player.setFireTicks(0);
-        player.setHealth(20);
+
         player.setFoodLevel(20);
         player.setSaturation(200);
         player.getInventory().clear();
@@ -114,8 +158,7 @@ public class Game {
         bow.setItemMeta(bowMeta);
         player.getInventory().addItem(bow);
         player.getInventory().addItem(new ItemStack(Material.ARROW, 5));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 999999, 255));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 999999, 20));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 999999, 255, false, false, false));
         player.setInvulnerable(true);
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             player.setInvulnerable(false);
@@ -129,8 +172,12 @@ public class Game {
         updateScoreboard();
         for (Player plyer : playersInGame) {
             plyer.sendMessage(ChatColor.WHITE + "[JumpMania] " + ChatColor.BOLD + ChatColor.GOLD.toString() + "Le joueur " + player.getName() + " a gagné !");
+            if(plyer != player) {
+                plyer.sendTitle(ChatColor.RED + "Vous avez perdu !", ChatColor.GRAY + "Le joueur " + player.getName() + " a gagné !", 10, 70, 20);
+            }
             this.plugin.hidenPlayers.addPlayerToGroup(plyer, 0);
         }
+        player.sendTitle(ChatColor.GREEN + "Vous avez gagné !", ChatColor.GRAY + "Vous avez gagné 200 points d'expérience !", 10, 70, 20);
         // Put a firework on the player
         Firework firework = player.getWorld().spawn(player.getLocation(), Firework.class);
         FireworkMeta fm = firework.getFireworkMeta();
@@ -166,6 +213,7 @@ public class Game {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "addexp jumpmania "+ player.getName() + " 50");
                 for(Player p : playersInGame) {
                     p.sendMessage(ChatColor.WHITE + "[JumpMania] " + ChatColor.BOLD + ChatColor.GOLD.toString() + "Le joueur " + player.getName() + " a gagné la manche !");
+                    p.sendTitle(ChatColor.GOLD + "Manche " + (rounds.winners.size() + 1) + "/" + (rounds.winners.size()<2?"2":rounds.winners.size() + 1), ChatColor.GREEN + "Le joueur " + player.getName() + " a remporté la manche !");
                     p.sendMessage(ChatColor.WHITE + "[JumpMania] " + ChatColor.GREEN +  "Début de la manche " + (rounds.winners.size() + 1) + "/" + (rounds.winners.size()<2?"2":rounds.winners.size() + 1));
                     respawn(p);
                 }
