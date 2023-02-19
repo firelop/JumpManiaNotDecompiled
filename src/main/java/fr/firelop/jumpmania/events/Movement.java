@@ -3,6 +3,7 @@ package fr.firelop.jumpmania.events;
 import fr.firelop.jumpmania.JumpMania;
 import fr.firelop.jumpmania.game.Game;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -26,6 +27,7 @@ public class Movement implements Listener {
             for (Game game : plugin.games) {
                 if (game.playersInGame.contains(player)) {
                     if(!game.won) {
+                    	if(player.getGameMode() == GameMode.SPECTATOR) return;
                         game.respawn(player, true);
                     }
                 }

@@ -99,7 +99,7 @@ public class Game {
             }
             for (Player player : playersInGame) {
                 Block blockUnder = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
-                if (blockUnder.getType() == Material.EMERALD_BLOCK) {
+                if (blockUnder.getType() == Material.EMERALD_BLOCK && player.getGameMode() != GameMode.SPECTATOR) {
                     if(player.isInvulnerable()) player.setInvulnerable(false);
                 }
                 if(player.isInvulnerable()) {
@@ -136,8 +136,8 @@ public class Game {
     public void respawn(Player player, boolean lostLife) {
         if(lostLife) {
             double health = player.getHealth();
-            if(health > 1) {
-                player.setHealth(health - 1);
+            if(health - 2 > 0) {
+                player.setHealth(health - 2);
             }  else  {
                 player.setGameMode(GameMode.SPECTATOR);
                 player.setHealth(20);
@@ -145,6 +145,8 @@ public class Game {
                 Bukkit.getScheduler().runTaskLater(Bukkit.getPluginManager().getPlugin("JumpMania"), () -> respawn(player), 200);
                 return;
             }
+        } else {
+        	player.setHealth(20);
         }
         player.teleport(getRandomSpawn());
         player.setFireTicks(0);
