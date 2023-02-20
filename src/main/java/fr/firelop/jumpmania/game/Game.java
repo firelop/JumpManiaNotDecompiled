@@ -99,7 +99,7 @@ public class Game {
             }
             for (Player player : playersInGame) {
                 Block blockUnder = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
-                if (blockUnder.getType() == Material.EMERALD_BLOCK && player.getGameMode() != GameMode.SPECTATOR) {
+                if (blockUnder.getType() == Material.EMERALD_BLOCK && player.getAllowFlight()) {
                     if(player.isInvulnerable()) player.setInvulnerable(false);
                 }
                 if(player.isInvulnerable()) {
@@ -139,8 +139,12 @@ public class Game {
             if(health - 2 > 0) {
                 player.setHealth(health - 2);
             }  else  {
-                player.setGameMode(GameMode.SPECTATOR);
+                player.setAllowFlight(true);
+                player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 200, 0, false, false, false));
                 player.setHealth(20);
+                // Disable pvp
+                player.setInvulnerable(true);
+                player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 200, 255, false, false, false));
                 player.sendTitle(ChatColor.RED + "Vous êtes mort !", ChatColor.GRAY + "Vous réaparraîtrez dans 10 secondes.", 10, 70, 20);
                 Bukkit.getScheduler().runTaskLater(Bukkit.getPluginManager().getPlugin("JumpMania"), () -> respawn(player), 200);
                 return;
@@ -148,6 +152,7 @@ public class Game {
         } else {
         	player.setHealth(20);
         }
+        player.setAllowFlight(false);
         player.teleport(getRandomSpawn());
         player.setFireTicks(0);
         player.setGameMode(GameMode.ADVENTURE);

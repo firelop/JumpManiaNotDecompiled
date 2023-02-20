@@ -14,7 +14,7 @@ public class InventoryClick implements Listener {
 
     @EventHandler
     public void onInventoryInteract(InventoryClickEvent event) {
-
+        if(event.getCurrentItem() == null) return;
         if(event.getWhoClicked().getOpenInventory().getTitle().equals("§6LootBox - Ouverture en cours...")) {
             event.setCancelled(true);
         }

@@ -27,7 +27,7 @@ public class Movement implements Listener {
             for (Game game : plugin.games) {
                 if (game.playersInGame.contains(player)) {
                     if(!game.won) {
-                    	if(player.getGameMode() == GameMode.SPECTATOR) return;
+                    	if(player.getAllowFlight()) return;
                         game.respawn(player, true);
                     }
                 }
