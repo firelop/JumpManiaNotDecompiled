@@ -15,7 +15,6 @@ import org.bukkit.block.Chest;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -29,8 +28,8 @@ import java.util.*;
 public class Game {
     public JumpMania plugin;
     public List<Player> playersInGame = new ArrayList<>();
-    private Location gameSpawn[];
-    private String lobbyName;
+    private final Location[] gameSpawn;
+    private final String lobbyName;
     public boolean won = false;
     public Player playerOnEmerald = null;
     public int timeForEmerald = 0;
@@ -38,7 +37,7 @@ public class Game {
     public RoundManager rounds = new RoundManager();
     public int serverIndex;
     public int ticks;
-    public HashMap<Player, ItemStack[]> inventories = new HashMap<>();
+    public HashMap<Player, ItemStack[]> inventories;
 
 
 
@@ -56,7 +55,7 @@ public class Game {
         for(Player player : playersInGame) {
 
 
-            player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+            player.setScoreboard(Objects.requireNonNull(Bukkit.getScoreboardManager()).getNewScoreboard());
             player.sendMessage(ChatColor.WHITE + "[JumpMania] " + ChatColor.GREEN +  "Début de la manche 1/2");
             player.setInvulnerable(false);
             player.setHealth(20);
@@ -144,14 +143,17 @@ public class Game {
                 player.setHealth(20);
                 // Disable pvp
                 player.setInvulnerable(true);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 200, 255, false, false, false));
+                // Prevent player from hitting other players
+                player.setCollidable(false);
+
                 player.sendTitle(ChatColor.RED + "Vous êtes mort !", ChatColor.GRAY + "Vous réaparraîtrez dans 10 secondes.", 10, 70, 20);
-                Bukkit.getScheduler().runTaskLater(Bukkit.getPluginManager().getPlugin("JumpMania"), () -> respawn(player), 200);
+                Bukkit.getScheduler().runTaskLater(plugin, () -> respawn(player), 200);
                 return;
             }
         } else {
         	player.setHealth(20);
         }
+        player.setCollidable(true);
         player.setAllowFlight(false);
         player.teleport(getRandomSpawn());
         player.setFireTicks(0);
@@ -161,6 +163,7 @@ public class Game {
         player.getInventory().clear();
         ItemStack bow = new ItemStack(Material.BOW);
         ItemMeta bowMeta = bow.getItemMeta();
+        assert bowMeta != null;
         bowMeta.addEnchant(Enchantment.ARROW_KNOCKBACK, 2, true);
         bow.setItemMeta(bowMeta);
         player.getInventory().addItem(bow);
@@ -169,9 +172,7 @@ public class Game {
         player.setInvulnerable(true);
 
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            player.setInvulnerable(false);
-        }, 30);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> player.setInvulnerable(false), 30);
     }
 
     public void winMessage(Player player) {
@@ -180,7 +181,7 @@ public class Game {
         won = true;
         updateScoreboard();
         for (Player plyer : playersInGame) {
-            plyer.sendMessage(ChatColor.WHITE + "[JumpMania] " + ChatColor.BOLD + ChatColor.GOLD.toString() + "Le joueur " + player.getName() + " a gagné !");
+            plyer.sendMessage(ChatColor.WHITE + "[JumpMania] " + ChatColor.BOLD + ChatColor.GOLD + "Le joueur " + player.getName() + " a gagné !");
             if(plyer != player) {
                 plyer.sendTitle(ChatColor.RED + "Vous avez perdu !", ChatColor.GRAY + "Le joueur " + player.getName() + " a gagné !", 10, 70, 20);
             }
@@ -194,10 +195,10 @@ public class Game {
         fm.addEffect(FireworkEffect.builder().withTrail().withColor(org.bukkit.Color.RED).with(org.bukkit.FireworkEffect.Type.BALL_LARGE).build());
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for (Player plyer : playersInGame) {
-                plyer.teleport(Bukkit.getWorld("jumpmania").getSpawnLocation());
+                plyer.teleport(Objects.requireNonNull(Bukkit.getWorld("jumpmania")).getSpawnLocation());
                 plyer.getInventory().setContents(inventories.get(plyer));
                 inventories.remove(plyer);
-                plyer.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+                plyer.setScoreboard(Objects.requireNonNull(Bukkit.getScoreboardManager()).getNewScoreboard());
                 plyer.setGameMode(GameMode.ADVENTURE);
                 plyer.setHealth(20);
                 plyer.setFoodLevel(20);
@@ -222,8 +223,8 @@ public class Game {
             } else {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "addexp jumpmania "+ player.getName() + " 50");
                 for(Player p : playersInGame) {
-                    p.sendMessage(ChatColor.WHITE + "[JumpMania] " + ChatColor.BOLD + ChatColor.GOLD.toString() + "Le joueur " + player.getName() + " a gagné la manche !");
-                    p.sendTitle(ChatColor.GOLD + "Manche " + (rounds.winners.size() + 1) + "/" + (rounds.winners.size()<2?"2":rounds.winners.size() + 1), ChatColor.GREEN + "Le joueur " + player.getName() + " a remporté la manche !");
+                    p.sendMessage(ChatColor.WHITE + "[JumpMania] " + ChatColor.BOLD + ChatColor.GOLD + "Le joueur " + player.getName() + " a gagné la manche !");
+                    p.sendTitle(ChatColor.GOLD + "Manche " + (rounds.winners.size() + 1) + "/" + (rounds.winners.size()<2?"2":rounds.winners.size() + 1), ChatColor.GREEN + "Le joueur " + player.getName() + " a remporté la manche !", 10, 70, 20);
                     p.sendMessage(ChatColor.WHITE + "[JumpMania] " + ChatColor.GREEN +  "Début de la manche " + (rounds.winners.size() + 1) + "/" + (rounds.winners.size()<2?"2":rounds.winners.size() + 1));
                     respawn(p);
                 }
@@ -234,20 +235,20 @@ public class Game {
     }
 
     public void updateScoreboard() {
-        Scoreboard scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
+        Scoreboard scoreboard = Objects.requireNonNull(Bukkit.getScoreboardManager()).getNewScoreboard();
         scoreboard.registerNewObjective("mgname", "dummy", ChatColor.RED + "JumpMania");
-        scoreboard.getObjective("mgname").setDisplaySlot(DisplaySlot.SIDEBAR);
-        scoreboard.getObjective("mgname").getScore(" ").setScore(9);
-        scoreboard.getObjective("mgname").getScore(ChatColor.WHITE + "Map: " + ChatColor.GOLD + ChatColor.BOLD + this.lobbyName).setScore(10);
-        scoreboard.getObjective("mgname").getScore("   ").setScore(7);
-        scoreboard.getObjective("mgname").getScore(ChatColor.WHITE + "Joueurs: " + ChatColor.GREEN + ChatColor.BOLD + this.playersInGame.size()).setScore(6);
-        scoreboard.getObjective("mgname").getScore("    ").setScore(5);
-        scoreboard.getObjective("mgname").getScore("     ").setScore(-1);
-        scoreboard.getObjective("mgname").getScore(ChatColor.WHITE + "www.skilliogames.fr").setScore(-2);
+        Objects.requireNonNull(scoreboard.getObjective("mgname")).setDisplaySlot(DisplaySlot.SIDEBAR);
+        Objects.requireNonNull(scoreboard.getObjective("mgname")).getScore(" ").setScore(9);
+        Objects.requireNonNull(scoreboard.getObjective("mgname")).getScore(ChatColor.WHITE + "Map: " + ChatColor.GOLD + ChatColor.BOLD + this.lobbyName).setScore(10);
+        Objects.requireNonNull(scoreboard.getObjective("mgname")).getScore("   ").setScore(7);
+        Objects.requireNonNull(scoreboard.getObjective("mgname")).getScore(ChatColor.WHITE + "Joueurs: " + ChatColor.GREEN + ChatColor.BOLD + this.playersInGame.size()).setScore(6);
+        Objects.requireNonNull(scoreboard.getObjective("mgname")).getScore("    ").setScore(5);
+        Objects.requireNonNull(scoreboard.getObjective("mgname")).getScore("     ").setScore(-1);
+        Objects.requireNonNull(scoreboard.getObjective("mgname")).getScore(ChatColor.WHITE + "www.skilliogames.fr").setScore(-2);
 
 
 
-        scoreboard.getObjective("mgname").getScore(ChatColor.WHITE + "Manche: " + ChatColor.GOLD + (!won ? this.rounds.winners.size() + 1 : this.rounds.winners.size()) + "/" + (rounds.winners.size()<2 ? "2" : (won ? rounds.winners.size() : rounds.winners.size() + 1))).setScore(8);
+        Objects.requireNonNull(scoreboard.getObjective("mgname")).getScore(ChatColor.WHITE + "Manche: " + ChatColor.GOLD + (!won ? this.rounds.winners.size() + 1 : this.rounds.winners.size()) + "/" + (rounds.winners.size()<2 ? "2" : (won ? rounds.winners.size() : rounds.winners.size() + 1))).setScore(8);
         HashMap<Player, Integer> playerWins = new HashMap<>();
         for(Player winner : this.rounds.winners) {
             playerWins.put(winner, playerWins.getOrDefault(winner, 0) + 1);
@@ -260,7 +261,7 @@ public class Game {
         }
         for(Map.Entry<Player, Integer> winner : playerWins.entrySet()) {
             plugin.getLogger().info(winner.getKey().getDisplayName());
-            scoreboard.getObjective("mgname").getScore(ChatColor.RESET + winner.getKey().getName() + " (" + ChatColor.GREEN + winner.getValue() + ChatColor.RESET + ")").setScore(winner.getValue());
+            Objects.requireNonNull(scoreboard.getObjective("mgname")).getScore(ChatColor.RESET + winner.getKey().getName() + " (" + ChatColor.GREEN + winner.getValue() + ChatColor.RESET + ")").setScore(winner.getValue());
         }
 
         for(Player p : playersInGame) {
@@ -286,7 +287,7 @@ public class Game {
     public void playerLeave(Player player) {
         player.getInventory().setContents(inventories.get(player));
         inventories.remove(player);
-        player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+        player.setScoreboard(Objects.requireNonNull(Bukkit.getScoreboardManager()).getNewScoreboard());
         player.getInventory().clear();
         player.setGameMode(GameMode.ADVENTURE);
         player.setHealth(20);
@@ -306,7 +307,7 @@ public class Game {
             }
         }
 
-        player.teleport(Bukkit.getWorld("jumpmania").getSpawnLocation());
+        player.teleport(Objects.requireNonNull(Bukkit.getWorld("jumpmania")).getSpawnLocation());
         playersInGame.remove(player);
         for(Player p : playersInGame) {
             p.sendMessage("[JumpMania] [" + ChatColor.RED + "-" + ChatColor.RESET + "] Le joueur " + ChatColor.AQUA + player.getDisplayName() + " a quitté votre partie.");

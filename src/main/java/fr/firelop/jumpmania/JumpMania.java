@@ -15,6 +15,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public final class JumpMania extends JavaPlugin {
 
@@ -33,16 +34,13 @@ public final class JumpMania extends JavaPlugin {
         }
         hdAPI = HolographicDisplaysAPI.get(this);
         getLogger().info("Le plugin a été activé !");
-        List<Player> players = new ArrayList<>();
-        for(Player pla : Bukkit.getOnlinePlayers()) {
-            players.add(pla);
-        }
+        List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
         getLogger().info(String.valueOf(hidenPlayers.addGroup(players)));
         System.out.println(hidenPlayers);
         // -239 4 271 test
-        getCommand("jumpmania").setExecutor(new JumpManiaJoinCommand(this));
-        getCommand("quitter").setExecutor(new JumpManiaLeaveCommand(this));
-        getCommand("spectate").setExecutor(new ServerSpectateCommand(this));
+        Objects.requireNonNull(getCommand("jumpmania")).setExecutor(new JumpManiaJoinCommand(this));
+        Objects.requireNonNull(getCommand("quitter")).setExecutor(new JumpManiaLeaveCommand(this));
+        Objects.requireNonNull(getCommand("spectate")).setExecutor(new ServerSpectateCommand(this));
         Bukkit.getPluginManager().registerEvents(new Movement(this), this);
         // On chest open
         Bukkit.getPluginManager().registerEvents(new ChestOpen(this), this);
@@ -57,6 +55,8 @@ public final class JumpMania extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new PlayerConnect(this), this);
         Bukkit.getPluginManager().registerEvents(new PlayerCommand(this), this);
         Bukkit.getPluginManager().registerEvents(new BreakBlock(this), this);
+        //On entity damage
+        Bukkit.getPluginManager().registerEvents(new EntityDamage(this), this);
         Bukkit.getPluginManager().registerEvents(new DropItem(this), this);
 
 
