@@ -89,7 +89,7 @@ public class Game {
                 this.timeForEmerald = 0;
                 for (Player player : playersInGame) {
                     Block blockUnder = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
-                    if (blockUnder.getType() == Material.EMERALD_BLOCK) {
+                    if (blockUnder.getType() == Material.EMERALD_BLOCK && !player.getAllowFlight()) {
                         this.playerOnEmerald = player;
                         this.timeForEmerald = 1;
                         updateTicks();
@@ -98,7 +98,7 @@ public class Game {
             }
             for (Player player : playersInGame) {
                 Block blockUnder = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
-                if (blockUnder.getType() == Material.EMERALD_BLOCK && player.getAllowFlight()) {
+                if (blockUnder.getType() == Material.EMERALD_BLOCK && !player.getAllowFlight()) {
                     if(player.isInvulnerable()) player.setInvulnerable(false);
                 }
                 if(player.isInvulnerable()) {
@@ -145,6 +145,7 @@ public class Game {
                 player.setInvulnerable(true);
                 // Prevent player from hitting other players
                 player.setCollidable(false);
+                player.getInventory().clear();
 
                 player.sendTitle(ChatColor.RED + "Vous êtes mort !", ChatColor.GRAY + "Vous réaparraîtrez dans 10 secondes.", 10, 70, 20);
                 Bukkit.getScheduler().runTaskLater(plugin, () -> respawn(player), 200);
